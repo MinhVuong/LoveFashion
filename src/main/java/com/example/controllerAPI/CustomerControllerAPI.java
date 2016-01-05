@@ -45,6 +45,7 @@ import com.example.entity.VerificationToken;
 import com.example.event.OnRegistrationCompleteEvent;
 import com.example.modelAPI.Message;
 import com.example.modelAPI.PackageAPI;
+import com.example.modelAPI.ShowAddress;
 import com.example.modelAPI.ShowDashBoard;
 import com.example.service.ICustomerService;
 import com.example.service.IEmailTemplateService;
@@ -171,30 +172,98 @@ public class CustomerControllerAPI {
 	@RequestMapping(value = "/register", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
 	public ResponseEntity<PackageAPI> register(
-			@RequestBody RegisterModel account,
+			@RequestBody RegisterModel account,HttpServletRequest request,
 			BindingResult result
-			){
-		System.out.println("Submit Register");
+			) throws NoSuchAlgorithmException{
+		String email = account.getEmail();
+		String first_name = account.getFirstName();
+		String last_name = account.getLastName();
+		String password = account.getPassword();
+		String comfirm_password = account.getConfirmPassword();
+		
 		Message message = new Message();
-		message.setTitle("Register");
-		message.setContent("Error about information your register."); 
-		return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-		/*if (result.hasErrors()) {
-			Message message = new Message();
+		if(email==null || email.equals(""))
+		{
+			
 			message.setTitle("Register");
-			message.setContent("Error about information your register."); 
+			message.setContent("Email null"); 
 			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-		} else {
-			CustomerEntity customer = customerService.register(account);
-			if (customer == null) {
-				//model.addAttribute("error_register", messageSource.getMessage("customer.account.register.error.E1", null, null));
-				return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
-			} else {
-				//String appUrl = this.getBaseUrl(request);
-				//eventPublisher.publishEvent(new OnRegistrationCompleteEvent(this, customer, request.getLocale(), appUrl));
-				return new ResponseEntity<PackageAPI>(HttpStatus.OK);
+		}
+		else
+		{
+			if(!pattern.matcher(email).matches())
+			{
+				
+				message.setTitle("Register");
+				message.setContent("Email didn't corrected format ex: @gmail or @yahoo,..."); 
+				return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
 			}
-		}*/
+			else
+			{
+				if(password==null || password.equals(""))
+				{
+					
+					message.setTitle("Register");
+					message.setContent("Password null"); 
+					return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+				}
+				else
+				{
+					if(password.length() < 6)
+					{
+						
+						message.setTitle("Register");
+						message.setContent("Length password less 6 chars"); 
+						return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+					}
+					else{
+						if(!password.equals(comfirm_password))
+						{
+							
+							message.setTitle("Register");
+							message.setContent("Password didn't matched."); 
+							return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+						}else{
+							if(first_name==null || first_name.equals(""))
+							{
+								
+								message.setTitle("Register");
+								message.setContent("First Name null"); 
+								return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+							}else{
+								if(last_name==null || last_name.equals(""))
+								{
+									
+									message.setTitle("Register");
+									message.setContent("Last Name null"); 
+									return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+								}
+							}
+							
+						}
+						
+					}
+					
+				}
+			}
+		}
+		CustomerEntity customer = customerService.register(account);
+		if (customer == null) {
+			
+			message.setTitle("Register");
+			message.setContent("Email had used!"); 
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.CONFLICT);
+		} else {
+			
+			message.setTitle("Register");
+			message.setContent("Register success");
+			
+			String appUrl = this.getBaseUrl(request);
+			eventPublisher.publishEvent(new OnRegistrationCompleteEvent(this, customer, request.getLocale(), appUrl));
+			
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.OK);
+		}
+	
 	}
 	private String getBaseUrl(HttpServletRequest request) {
 		if ((request.getServerPort() == 80) || (request.getServerPort() == 443))
@@ -216,21 +285,22 @@ public class CustomerControllerAPI {
 	public ResponseEntity<PackageAPI> confirmRegistration(@RequestParam("token") String token) {
 		VerificationToken verificationToken = customerService
 				.getVerificationToken(token);
+		Message message = new Message();
 		if (verificationToken == null) {
-			//model.addAttribute("message", "Not token extits in database!");
-			//return "redirect:/customer/account/baduser";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			message.setTitle("Token");
+			message.setContent("Not token exist in database!");
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.NO_CONTENT);
 		}
 		CustomerEntity customer = verificationToken.getCustomerEntity();
 		Calendar cal = Calendar.getInstance();
 		if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0) {
-			//model.addAttribute("message", "Token has expired!");
-			//return "redirect:/customer/account/baduser";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			message.setTitle("Token");
+			message.setContent("Token has expired!");
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.GATEWAY_TIMEOUT);
 		}
 		customer.setIsActive((short) 1);
 		customerService.update(customer);
-		//return "redirect:/customer/account/login";
+		
 		return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 	}
 	
@@ -245,11 +315,8 @@ public class CustomerControllerAPI {
 			SimpleMailMessage email = constructResendVerificationTokenEmail(
 					appUrl, request.getLocale(), newToken, customer);
 			mailSender.send(email);
-			//return "redirect:/customer/account/login";
 			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		}
-		//model.addAttribute("message", "Not token extits in database!");
-		//return "redirect:/customer/account/baduser";
 		return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 	}
 	private SimpleMailMessage constructResendVerificationTokenEmail(
@@ -271,72 +338,54 @@ public class CustomerControllerAPI {
 		return email;
 	}
 	
-	@RequestMapping(value = "/edit", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
+	@RequestMapping(value = "/edit/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> showUpdateAccount(
-			Model model,
-			HttpSession session,
+	public ResponseEntity<PackageAPI> showUpdateAccount(@RequestParam(value = "id") Integer id,
 			@RequestParam(value = "changePassword", required = false) Integer changePassword) {
-		CustomerEntity customer = (CustomerEntity) session
-				.getAttribute("customer");
+		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			UpdateAccount update = new UpdateAccount();
 			if (changePassword != null)
 				update.setChangePassword(true);
-			model.addAttribute("update", update);
-			//return "update-account";
 			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		}
-		//return "redirect:/customer/account/login";
 		return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 	}
 	
-	@RequestMapping(value = "/edit", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
+	@RequestMapping(value = "/edit/{id}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> updateAccount(
-			@RequestBody UpdateAccount account,
-			Model model, BindingResult result, HttpSession session)
+	public ResponseEntity<PackageAPI> updateAccount(@RequestParam(value = "id") Integer id,
+			@RequestBody UpdateAccount account)
 			throws NoSuchAlgorithmException {
-		if (result.hasErrors()) {
-			//return "update-account";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
-		} else {
-			CustomerEntity customer = (CustomerEntity) session
-					.getAttribute("customer");
-			if (customer != null) {
-				customer.setFirstname(account.getFirstName());
-				customer.setLastname(account.getLastName());
-				if (account.isChangePassword()) {
-					if (customer.getPassword().equals(
-							customerService.hashPassword(account
-									.getCurrentPassword()))) {
-						customer.setPassword(customerService
-								.hashPassword(account.getPassword()));
-					} else {
-						model.addAttribute("error_update",
-								"Invalid current password.");
-						//return "update-account";
-						return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
-					}
+		CustomerEntity customer = customerService.getCustomerId(id);
+		
+		if (customer != null) {
+			customer.setFirstname(account.getFirstName());
+			customer.setLastname(account.getLastName());
+			if (account.isChangePassword()) {
+				if (customer.getPassword().equals(
+						customerService.hashPassword(account
+								.getCurrentPassword()))) {
+					customer.setPassword(customerService
+							.hashPassword(account.getPassword()));
+				} else {
+					
+					return new ResponseEntity<PackageAPI>(HttpStatus.NO_CONTENT);
 				}
-				customerService.update(customer);
-				model.addAttribute("message_update",
-						"The account information has been saved.");
-				//return "update-account";
-				return new ResponseEntity<PackageAPI>(HttpStatus.OK);
-			} else {
-				//return "redirect:/customer/account/login";
-				return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 			}
+			customerService.update(customer);
+			
+			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
+		} else {
+			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 		}
 	}
 	
 	
-	@RequestMapping(value = "/address", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
+	@RequestMapping(value = "/address/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> showAddress(Model model, HttpSession session) {
-		CustomerEntity customer = (CustomerEntity) session
-				.getAttribute("customer");
+	public ResponseEntity<ShowAddress> showAddress(@RequestParam(value = "id") Integer id) {
+		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			CustomerAddressEntity defaultBilling = null;
 			CustomerAddressEntity defaultShipping = null;
@@ -354,19 +403,18 @@ public class CustomerControllerAPI {
 					.findAdditionalAddress(customer.getEntityId(),
 							customer.getDefaultBilling(),
 							customer.getDefaultShipping());
-			model.addAttribute("defaultBilling", defaultBilling);
-			model.addAttribute("defaultShipping", defaultShipping);
-			model.addAttribute("listAddress", listAddress);
-			//return "address";
-			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
+			ShowAddress showAddress = new ShowAddress();
+			showAddress.setDefaultBilling(defaultBilling);
+			showAddress.setDefaultShipping(defaultShipping);
+			showAddress.setListAddress(listAddress);
+			return new ResponseEntity<ShowAddress>(HttpStatus.OK);
 		} else {
-			//return "redirect:/customer/account/login";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			
+			return new ResponseEntity<ShowAddress>(HttpStatus.BAD_REQUEST);
 		}
 	}
 	
-	@RequestMapping(value = "/address/new", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
-	@ResponseBody
+	@RequestMapping(value = "/address/new", method = RequestMethod.GET)	// Xem lai sau
 	public ResponseEntity<PackageAPI> showNewAddress(Model model, HttpSession session) {
 		CustomerEntity customer = (CustomerEntity) session
 				.getAttribute("customer");
@@ -387,31 +435,30 @@ public class CustomerControllerAPI {
 		}
 	}
 	
-	@RequestMapping(value = "/address/new", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
+	@RequestMapping(value = "/address/new/{id}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> addNewAddress(
-			@ModelAttribute("address") @Validated AddressAccount address,
-			Model model, HttpSession session, BindingResult result) {
-		if (result.hasErrors()) {
-			//return "update-address";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+	public ResponseEntity<PackageAPI> addNewAddress(@RequestParam(value = "id") Integer id,
+			@RequestBody AddressAccount address) {
+		CustomerEntity customer = customerService.getCustomerId(id);
+		if (customer != null) {
+			countryList = new HashMap<String, String>();
+			countryList.put("VN", "Viet Nam");
+			regionList = new HashMap<String, String>();
+			regionList.put("1", "Ho Chi Minh");
+			regionList.put("2", "Ha Noi");
+			
+			address.setRegion(regionList.get(address.getRegionId()));
+			address.setCountry(countryList.get(address.getCountryId()));
+			customerService.saveAdress(address, customer);
+			
+			
+			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		} else {
-			CustomerEntity customer = (CustomerEntity) session
-					.getAttribute("customer");
-			if (customer != null) {
-				address.setRegion(regionList.get(address.getRegionId()));
-				address.setCountry(countryList.get(address.getCountryId()));
-				customerService.saveAdress(address, customer);
-				model.addAttribute("message", "The address has been saved.");
-				//return "redirect:/customer/account/address";
-				return new ResponseEntity<PackageAPI>(HttpStatus.OK);
-			} else {
-				//return "redirect:/customer/account/login";
-				return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
-			}
+		
+			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 		}
 	}
-	
+	// Khong can chuyen
 	@RequestMapping(value = "/address/edit/id/{entityId}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
 	public ResponseEntity<PackageAPI> showUpdateAddress(Model model,
@@ -456,49 +503,34 @@ public class CustomerControllerAPI {
 	}
 	
 	////////////////////////////////////////////
-	@RequestMapping(value = "/address/edit/id/{entityId}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
+	@RequestMapping(value = "/address/edit/{id}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> updateAddress(
-			@ModelAttribute("address") @Validated AddressAccount address,
-			Model model, HttpSession session, BindingResult result) {
-		if (result.hasErrors()) {
-			//return "update-address";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+	public ResponseEntity<PackageAPI> updateAddress(@RequestParam(value = "id") Integer id,
+			@RequestBody AddressAccount address) {
+		CustomerEntity customer = customerService.getCustomerId(id);
+		if (customer != null) {
+			address.setRegion(regionList.get(address.getRegionId()));
+			address.setCountry(countryList.get(address.getCountryId()));
+			customerService.updateAdress(address, customer);
+			
+			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		} else {
-			CustomerEntity customer = (CustomerEntity) session
-					.getAttribute("customer");
-			if (customer != null) {
-				address.setRegion(regionList.get(address.getRegionId()));
-				address.setCountry(countryList.get(address.getCountryId()));
-				customerService.updateAdress(address, customer);
-				model.addAttribute("message", "The address has been update.");
-				//return "redirect:/customer/account/address";
-				return new ResponseEntity<PackageAPI>(HttpStatus.OK);
-			} else {
-				//return "redirect:/customer/account/login";
-				return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
-			}
-
+			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 		}
 	}
 
-	@RequestMapping(value = "/address/delete/id/{entityId}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
+	@RequestMapping(value = "/address/delete/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> deleteAddress(Model model,
-			@PathVariable("entityId") Integer id, HttpSession session) {
-		CustomerEntity customer = (CustomerEntity) session
-				.getAttribute("customer");
+	public ResponseEntity<PackageAPI> deleteAddress(@RequestParam(value = "id") Integer id) {
+		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			if (id == null) {
 				//return "redirect:/customer/account/address";
 				return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 			}
 			customerService.deleteCustomerAddress(id);
-			model.addAttribute("message", "The address has been deleted.");
-			//return "redirect:/customer/account/address";
 			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		} else {
-			//return "redirect:/customer/account/login";
 			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 		}
 
@@ -513,24 +545,19 @@ public class CustomerControllerAPI {
 	@RequestMapping(value = "/forgotpassword", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
 	public ResponseEntity<PackageAPI> forgotPassword(@RequestParam("email") String customerEmail,
-			HttpServletRequest request, Model model) {
+			HttpServletRequest request) {
 		if (customerEmail == null || "".equals(customerEmail)) {
-			model.addAttribute("error",
-					messageSource.getMessage("common.required", null, null));
-			//return "forgot-password";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			
+			return new ResponseEntity<PackageAPI>(HttpStatus.NO_CONTENT);
 		} else if (!pattern.matcher(customerEmail).matches()) {
-			model.addAttribute("error", messageSource.getMessage(
-					"common.validation.email", null, null));
-			//return "forgot-password";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			
+			return new ResponseEntity<PackageAPI>(HttpStatus.valueOf(422));		// khong dung dinh dang
 		} else {
 			CustomerEntity customer = customerService
 					.findByEmail(customerEmail);
 			if (customer == null) {
-				model.addAttribute("error", "Email not exits in databases.");
-				//return "forgot-password";
-				return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+				
+				return new ResponseEntity<PackageAPI>(HttpStatus.CONFLICT);
 			}
 			String token = UUID.randomUUID().toString();
 			customerService.createVerificationTokenForUser(customer, token,
@@ -539,7 +566,7 @@ public class CustomerControllerAPI {
 			SimpleMailMessage email = constructResetTokenEmail(appUrl,
 					request.getLocale(), token, customer);
 			mailSender.send(email);
-			//return "redirect:/customer/account/login";
+			
 			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		}
 	}
@@ -594,52 +621,48 @@ public class CustomerControllerAPI {
 		CustomerEntity customer = customerService.getCustomerId(entityId);
 		customer.setPassword(customerService.hashPassword(password));
 		customerService.update(customer);
-		//return "redirect:/customer/account/login";
+		
 		return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "/myorder", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
+	@RequestMapping(value = "/myorder/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> order(Model model, HttpSession session) {
-		CustomerEntity customer = (CustomerEntity) session
-				.getAttribute("customer");
+	public ResponseEntity<List<OrderModel>> order(@RequestParam(value = "id") Integer id) {
+		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			List<OrderModel> orders = customerService.myOrders(customer);
-			model.addAttribute("orders", orders);
-			//return "myorders";
-			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
+			
+			return new ResponseEntity<List<OrderModel>>(orders, HttpStatus.OK);
 		} else {
-			//return "redirect:/customer/account/login";
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<List<OrderModel>>(HttpStatus.BAD_REQUEST);
 		}
 	}
 
 	@RequestMapping(value = "/myorder/cancle/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> cancleOrder(Model model, HttpSession session,
-			@PathVariable("id") int id) {
-		CustomerEntity customer = (CustomerEntity) session
-				.getAttribute("customer");
+	public ResponseEntity<PackageAPI> cancleOrder(@RequestParam(value = "id") Integer id) {
+		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			SalesOrder order = customerService.getOrder(id);
 			if (order != null) {
 				Calendar cal = Calendar.getInstance();
 				long time =  cal.getTime().getTime() - order.getCreatedAt().getTime();
 				if ((cal.getTime().getTime() - order.getCreatedAt().getTime()) <= 10800*1000){
-					model.addAttribute("message", "Orders has been canceled.");
+					//model.addAttribute("message", "Orders has been canceled.");
 					customerService.cancelOrder(order);
 					SimpleMailMessage email = constructCancleOrdersEmail(customer, id);
 					mailSender.send(email);
+					return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 				} else {
-					model.addAttribute("message", "Your order has placed more than 3 hours should not be canceled.");
+					//model.addAttribute("message", "Your order has placed more than 3 hours should not be canceled.");
+					return new ResponseEntity<PackageAPI>(HttpStatus.GATEWAY_TIMEOUT);
 				}
 			} else {
-				model.addAttribute("error", "Orders not exits in database.");
+				//model.addAttribute("error", "Orders not exits in database.");
+				return new ResponseEntity<PackageAPI>(HttpStatus.NO_CONTENT);
 			}
-			//return "redirect:/customer/account/myorder";
-			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
+			
 		} else {
-			//return "redirect:/customer/account/login";
 			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 		}
 	}

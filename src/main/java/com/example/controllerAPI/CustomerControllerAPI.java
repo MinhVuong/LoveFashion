@@ -40,6 +40,7 @@ import com.example.entity.EmailTemplate;
 import com.example.entity.SalesOrder;
 import com.example.entity.VerificationToken;
 import com.example.event.OnRegistrationCompleteEvent;
+import com.example.modelAPI.CustomerAPI;
 import com.example.modelAPI.Message;
 import com.example.modelAPI.PackageAPI;
 import com.example.modelAPI.ShowAddress;
@@ -80,23 +81,34 @@ public class CustomerControllerAPI {
 	private static final int PASSWORD_LENGTH = 6;
 	private Pattern pattern = Pattern.compile(EMAIL_PATTERN);
 
-	@RequestMapping(value = { "/{id}" },method = RequestMethod.GET, headers = "Accept=application/json")
+	@RequestMapping(value = { "/{id}" },method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	public ResponseEntity<PackageAPI> showDashboard(@PathVariable("id") int id) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer == null) {
 			return new ResponseEntity<PackageAPI>( HttpStatus.NO_CONTENT);
 		} else {
+			
 			ShowDashBoard showDashBoard = new ShowDashBoard();
-			//showDashBoard.setCustomer(customer);
-			//showDashBoard.setDefaultBilling(null);
-			//showDashBoard.setDefaultShipping(null);
+			CustomerAPI result = new CustomerAPI();
+			result.setEmail(customer.getEmail());
+			result.setEntityId(customer.getEntityId());
+			result.setFirstname(customer.getFirstname());
+			result.setGender(customer.getGender());
+			result.setLastname(customer.getLastname());
+			result.setPassword(customer.getPassword());
+			result.setScore(customer.getScore());
+			
+			showDashBoard.setDefaultBilling(null);
+			showDashBoard.setDefaultShipping(null);
 			if (customer.getDefaultBilling() != null) {
 				showDashBoard.setDefaultBilling(customerService.getCustomerAddress(new Integer(customer.getDefaultBilling()))); 
 			}
 			if (customer.getDefaultShipping() != null) {
 				showDashBoard.setDefaultShipping(customerService.getCustomerAddress(new Integer(customer.getDefaultShipping())));
 			}
+			System.out.println("api show dashboard ");
 			
+			showDashBoard.setCustomer(result);
 			return new ResponseEntity<PackageAPI>(showDashBoard, HttpStatus.OK);
 		}
 	}

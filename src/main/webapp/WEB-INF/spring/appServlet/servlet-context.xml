@@ -27,13 +27,14 @@
     <context:component-scan base-package="com.example.repository" />
     <context:component-scan base-package="com.example.service" />
     <context:component-scan base-package="com.example.validator" />
+    <context:component-scan base-package="com.example.controllerAPI" />
 
     <!-- DataSource database -->
     <beans:bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <beans:property name="driverClassName" value="com.mysql.jdbc.Driver" />
-        <beans:property name="url" value="jdbc:mysql://localhost:3307/lovefashion?useUnicode=true&amp;characterEncoding=UTF-8" />
+        <beans:property name="url" value="jdbc:mysql://localhost:3306/lovefashion?useUnicode=true&amp;characterEncoding=UTF-8" />
         <beans:property name="username" value="root" />
-        <beans:property name="password" value="usbw" />
+        <beans:property name="password" value="root" />
     </beans:bean>
     
     <!-- Session factory -->

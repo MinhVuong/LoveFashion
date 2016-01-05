@@ -1,10 +1,16 @@
 package com.example.modelAPI;
 
 import com.example.entity.CustomerAddressEntity;
+import com.example.entity.CustomerEntity;
 
 public class ShowDashBoard extends PackageAPI {
 	private CustomerAddressEntity defaultBilling;
 	private CustomerAddressEntity defaultShipping;
+	private CustomerEntity customer;
+	
+	
+
+	
 	public ShowDashBoard() {
 		super();	
 	}
@@ -32,5 +38,12 @@ public class ShowDashBoard extends PackageAPI {
 		this.defaultShipping = defaultShipping;
 	}
 	
-	
+	public CustomerEntity getCustomer() {
+		return customer;
+	}
+
+	public void setCustomer(CustomerEntity customer) {
+		this.customer = customer;
+	}
+
 }

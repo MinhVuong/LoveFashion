@@ -22,16 +22,13 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.context.request.WebRequest;
 
 import com.example.dto.AddressAccount;
 import com.example.dto.OrderModel;
@@ -83,23 +80,24 @@ public class CustomerControllerAPI {
 	private static final int PASSWORD_LENGTH = 6;
 	private Pattern pattern = Pattern.compile(EMAIL_PATTERN);
 
-	@RequestMapping(value = { "/{id}" },method = { RequestMethod.GET },produces = { "application/json", "application/xml" })
-	@ResponseBody
+	@RequestMapping(value = { "/{id}" },method = RequestMethod.GET, headers = "Accept=application/json")
 	public ResponseEntity<PackageAPI> showDashboard(@PathVariable("id") int id) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer == null) {
-			return new ResponseEntity<PackageAPI>( HttpStatus.valueOf(500));
+			return new ResponseEntity<PackageAPI>( HttpStatus.NO_CONTENT);
 		} else {
 			ShowDashBoard showDashBoard = new ShowDashBoard();
-			showDashBoard.setDefaultBilling(null);
-			showDashBoard.setDefaultShipping(null);
+			//showDashBoard.setCustomer(customer);
+			//showDashBoard.setDefaultBilling(null);
+			//showDashBoard.setDefaultShipping(null);
 			if (customer.getDefaultBilling() != null) {
 				showDashBoard.setDefaultBilling(customerService.getCustomerAddress(new Integer(customer.getDefaultBilling()))); 
 			}
 			if (customer.getDefaultShipping() != null) {
 				showDashBoard.setDefaultShipping(customerService.getCustomerAddress(new Integer(customer.getDefaultShipping())));
 			}
-			return new ResponseEntity<PackageAPI>(showDashBoard, HttpStatus.valueOf(200));
+			
+			return new ResponseEntity<PackageAPI>(showDashBoard, HttpStatus.OK);
 		}
 	}
 	
@@ -108,14 +106,17 @@ public class CustomerControllerAPI {
 			produces = { "application/json", "application/xml" })
 	@ResponseBody
 	public ResponseEntity<CustomerEntity> showLogin() {
-		//System.out.println("api get login ");
+		
+		System.out.println("api get login ");
+		
 		CustomerEntity customer = new CustomerEntity();
 		ResponseEntity<CustomerEntity> entity = new ResponseEntity<CustomerEntity>(customer, HttpStatus.valueOf(200));
 		return entity;
 	}
 	@RequestMapping(value = { "/login " },
-			method = { RequestMethod.PUT },
-			consumes = { "application/json", "application/xml" })
+			method = { RequestMethod.POST },
+			consumes = { "application/json", "application/xml" },
+			produces = { "application/json", "application/xml" })
 	@ResponseBody
 	public ResponseEntity<PackageAPI> submitLogin(@RequestBody CustomerEntity customer_Client) throws NoSuchAlgorithmException {
 	
@@ -247,7 +248,7 @@ public class CustomerControllerAPI {
 				}
 			}
 		}
-		CustomerEntity customer = customerService.register(account);
+		CustomerEntity customer = customerService.register(account, false);
 		if (customer == null) {
 			
 			message.setTitle("Register");

@@ -212,6 +212,13 @@
             <artifactId>mail</artifactId>
             <version>1.4.7</version>
         </dependency>
+        
+        <dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlets</artifactId>
+			<version>9.2.13.v20150730</version>
+		</dependency>
+
     </dependencies>
     <build>
         <finalName>LoveFashion</finalName>

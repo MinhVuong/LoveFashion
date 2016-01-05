@@ -280,7 +280,7 @@ public class CustomerController {
 		
 	}
 	
-	//	cai nay show lgin nè
+	
 	@RequestMapping(value = "/login", method = RequestMethod.GET)
 	public String showLogin(HttpSession session) {
 		CustomerEntity customer = (CustomerEntity) session

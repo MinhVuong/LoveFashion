@@ -43,6 +43,7 @@ import com.example.entity.EmailTemplate;
 import com.example.entity.SalesOrder;
 import com.example.entity.VerificationToken;
 import com.example.event.OnRegistrationCompleteEvent;
+import com.example.modelAPI.Message;
 import com.example.modelAPI.PackageAPI;
 import com.example.modelAPI.ShowDashBoard;
 import com.example.service.ICustomerService;
@@ -115,32 +116,47 @@ public class CustomerControllerAPI {
 			method = { RequestMethod.PUT },
 			consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<CustomerEntity> submitLogin(@RequestBody CustomerEntity customer_Client) throws NoSuchAlgorithmException {
+	public ResponseEntity<PackageAPI> submitLogin(@RequestBody CustomerEntity customer_Client) throws NoSuchAlgorithmException {
+	
 		//System.out.println("api put login");
 		String email = customer_Client.getEmail();
 		String password = customer_Client.getPassword();
-		
+		Message message = new Message();
 		if (email == null || "".equals(email)) {
-			return new ResponseEntity<CustomerEntity>(HttpStatus.BAD_REQUEST);
+			
+			message.setTitle("Login");
+			message.setContent("Email null");
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
 		} else if (password == null || "".equals(password)) {
-			return new ResponseEntity<CustomerEntity>(HttpStatus.BAD_REQUEST);
+			
+			message.setTitle("Login");
+			message.setContent("Password null");
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
 		} else if (!pattern.matcher(email).matches()) {
-			return new ResponseEntity<CustomerEntity>(HttpStatus.BAD_REQUEST);
+			
+			message.setTitle("Login");
+			message.setContent("Email didn't correct format: @gmail or @yahoo,...");
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
 		} else if (password.length() < PASSWORD_LENGTH) {
-			return new ResponseEntity<CustomerEntity>(HttpStatus.BAD_REQUEST);
+			
+			message.setTitle("Login");
+			message.setContent("Lengh Password less 6 chars");
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
 		} else {
 			CustomerEntity customer = customerService.getCustomer(email, password);
 			if (customer == null) {
-				return new ResponseEntity<CustomerEntity>(HttpStatus.BAD_REQUEST);
+				
+				message.setTitle("Login");
+				message.setContent("Account don't exist in database!"); 
+				return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(404));
 			} else {
 				customer.setLogdate(new Date());
 				customer.setLognum((short) (customer.getLognum() + 1));
 				customerService.update(customer);
-				
-				/*if (url != null && !"".equals(url)) {
-					return "redirect:" + url;
-				}*/
-				return new ResponseEntity<CustomerEntity>(customer, HttpStatus.valueOf(200));
+				String userID = customer.getEntityId().toString();
+				message.setTitle("Login");
+				message.setContent(userID); 
+				return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(200));
 			}
 		}
 	}
@@ -157,10 +173,17 @@ public class CustomerControllerAPI {
 	public ResponseEntity<PackageAPI> register(
 			@RequestBody RegisterModel account,
 			BindingResult result
-			)
-			throws NoSuchAlgorithmException {
-		if (result.hasErrors()) {
-			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
+			){
+		System.out.println("Submit Register");
+		Message message = new Message();
+		message.setTitle("Register");
+		message.setContent("Error about information your register."); 
+		return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+		/*if (result.hasErrors()) {
+			Message message = new Message();
+			message.setTitle("Register");
+			message.setContent("Error about information your register."); 
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
 		} else {
 			CustomerEntity customer = customerService.register(account);
 			if (customer == null) {
@@ -171,7 +194,7 @@ public class CustomerControllerAPI {
 				//eventPublisher.publishEvent(new OnRegistrationCompleteEvent(this, customer, request.getLocale(), appUrl));
 				return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 			}
-		}
+		}*/
 	}
 	private String getBaseUrl(HttpServletRequest request) {
 		if ((request.getServerPort() == 80) || (request.getServerPort() == 443))

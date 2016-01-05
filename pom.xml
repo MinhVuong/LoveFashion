@@ -27,18 +27,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1</version>
+		</dependency>
 		
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-core</artifactId>
-			<version>${org.springframework-version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-web</artifactId>
-			<version>${org.springframework-version} </version>
-		</dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
@@ -75,25 +69,6 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.4.3</version>
         </dependency>
-        <dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.4.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>2.4.3</version>
-		</dependency>
-		<!-- Jaxb -->
-		<dependency>
-			<groupId>javax.xml</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>2.1</version>
-		</dependency>
-		
-		
-		
 
         <!-- Apache Commons FileUpload -->
         <dependency>

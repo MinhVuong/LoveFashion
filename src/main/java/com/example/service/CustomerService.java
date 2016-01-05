@@ -68,7 +68,7 @@ public class CustomerService implements ICustomerService {
 	}
 
 	@Transactional
-	public CustomerEntity register(RegisterModel register)
+	public CustomerEntity register(RegisterModel register, boolean social)
 			throws NoSuchAlgorithmException {
 		// TODO Auto-generated method stub
 		if (emailExist(register.getEmail()))
@@ -78,11 +78,15 @@ public class CustomerService implements ICustomerService {
 		customer.setFirstname(register.getFirstName());
 		customer.setLastname(register.getLastName());
 		customer.setPassword(hashPassword(register.getPassword()));
-		customer.setIsActive((short) 0);
+		if (social)
+			customer.setIsActive((short) 1);
+		else
+			customer.setIsActive((short) 0);
 		customer.setCreatedAt(new Date());
 		customer.setUpdatedAt(new Date());
 		customer.setCustomerGroup(new CustomerGroup(Short.valueOf((short) 1)));
-		customerDao.create(customer);
+		int id = customerDao.create(customer);
+		customer.setEntityId(id);
 		return customer;
 	}
 
@@ -107,7 +111,7 @@ public class CustomerService implements ICustomerService {
 	@Transactional
 	public VerificationToken generateNewVerificationToken(String existingToken) {
 		VerificationToken vToken = tokenRepository.findByToken(existingToken);
-		if(vToken != null){
+		if (vToken != null) {
 			vToken.updateToken(UUID.randomUUID().toString());
 			tokenRepository.update(vToken);
 			return vToken;

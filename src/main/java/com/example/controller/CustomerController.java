@@ -1,5 +1,15 @@
 package com.example.controller;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 import java.util.Date;
@@ -10,9 +20,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.swing.text.View;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
@@ -75,7 +90,7 @@ public class CustomerController {
 	private static final int PASSWORD_LENGTH = 6;
 	private Pattern pattern = Pattern.compile(EMAIL_PATTERN);
 
-	@RequestMapping(value = "/}", method = RequestMethod.GET)
+	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String showDashboard(Model model, HttpSession session) {
 		CustomerEntity customer = (CustomerEntity) session
 				.getAttribute("customer");
@@ -101,6 +116,171 @@ public class CustomerController {
 
 	}
 
+	@RequestMapping(value = "/loginFB", method = RequestMethod.GET)
+	public String pressbuttonLoginFB(@RequestParam("code") String code, Model model) throws IOException, NoSuchAlgorithmException {
+		// cái này m sẽ zử lý nè.
+		// lam sao lay dc gia tri cua GET ?
+		//vi du /loginFB?code=asakdjs
+		
+		// roi ok, chay di
+		//dc chua
+        
+        System.out.println(code);
+        
+        String url = "https://accounts.google.com/o/oauth2/token";
+		URL obj = new URL(url);
+		HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+
+		//add reuqest header
+		con.setRequestMethod("POST");
+		
+		con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+
+		String urlParameters = "client_id=1052950712954-a2nrjpahmp79lb92ahmah2vm9764fmtl.apps.googleusercontent.com&client_secret=yNRv1XfhXKd9jDB856ebgnVN&code="+code+"&grant_type=authorization_code&redirect_uri=http://localhost:8080/customer/account/loginFB";
+		
+		// Send post request
+		con.setDoOutput(true);
+		DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+		wr.writeBytes(urlParameters);
+		wr.flush();
+		wr.close();
+
+		int responseCode = con.getResponseCode();
+		//System.out.println("\nSending 'POST' request to URL : " + url);
+		//System.out.println("Post parameters : " + urlParameters);
+		//System.out.println("Response Code : " + responseCode);
+
+		BufferedReader in = new BufferedReader(
+		        new InputStreamReader(con.getInputStream()));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+		
+		//print result
+		//System.out.println(response.toString());
+		 //response 
+		//parse lay ra access _yoken dum t
+		JSONParser jsonParser = new JSONParser();
+
+		JSONObject jsonObject;
+		String access = null;
+		try {
+			jsonObject = (JSONObject) jsonParser.parse(response.toString());
+			access = (String) jsonObject.get("access_token");
+			
+            
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	    
+		 //Get email 
+		
+		
+		url = "https://www.googleapis.com/oauth2/v1/userinfo?access_token="+access;
+		
+		obj = new URL(url);
+		con = (HttpsURLConnection) obj.openConnection();
+
+		// optional default is GET
+		con.setRequestMethod("GET");
+        
+		//add request header
+		
+		con.setRequestProperty("Accept-Charset", "UTF-8");
+		responseCode = con.getResponseCode();
+		//System.out.println("\nSending 'GET' request to URL : " + url);
+		//System.out.println("Response Code : " + responseCode);
+		Charset charset = Charset.forName("UTF8");
+		in = new BufferedReader(
+		        new InputStreamReader(con.getInputStream(),charset));
+		
+		 response = new StringBuffer();
+
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+
+		//print result
+		System.out.println(response.toString());
+		jsonParser = new JSONParser();
+
+		
+		String email = null;
+		String fname = null;
+		String lname = null;
+		String password = "fuck";
+		String pass = null;
+		try {
+			pass = customerService.hashPassword(password);
+		} catch (NoSuchAlgorithmException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		try {
+			jsonObject = (JSONObject) jsonParser.parse(response.toString());
+			email = (String) jsonObject.get("email");
+			fname = (String) jsonObject.get("family_name");
+			lname = (String) jsonObject.get("given_name");
+			
+			
+            
+			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(email.toString());
+		            // get a String from the JSON object
+		//xong
+		//gio setup dum tao cai get use by email di
+		
+		CustomerEntity customer = customerService.findByEmail(email);
+		if (customer == null) {
+			RegisterModel register = new RegisterModel();
+			register.setEmail(email);
+			register.setPassword(pass);
+			register.setFirstName(fname);
+			register.setLastName(lname);
+			customer = customerService.register(register, true);
+			model.addAttribute("customer", customer);
+			
+			return "redirect:/customer/account/";
+		} else {
+			customer.setLogdate(new Date());
+			customer.setLognum((short) (customer.getLognum() + 1));
+			customerService.update(customer);
+			model.addAttribute("customer", customer);
+			//
+			
+			//doan nao set cookie dau?
+			return "redirect:/customer/account/";
+		}
+		            
+
+        
+		
+		//lay code sao
+		//String email = "";// gia su day là email lay tu fb.
+		//CustomerEntity customer = customerService.getCustomer(email, password);	// cai nay can pass. M lamf ham khac k can pass, chi can email thoi, vi fb xac thuc roi.
+		//customer.setLogdate(new Date());
+		//customer.setLognum((short) (customer.getLognum() + 1));
+		//customerService.update(customer);
+		//model.addAttribute("customer", customer);
+	
+		//doan nao set cookie dau?
+		
+		
+	}
+	
+	//	cai nay show lgin nè
 	@RequestMapping(value = "/login", method = RequestMethod.GET)
 	public String showLogin(HttpSession session) {
 		CustomerEntity customer = (CustomerEntity) session
@@ -109,7 +289,9 @@ public class CustomerController {
 			return "redirect:/customer/account/";
 		return "login";
 	}
-
+	///gio 72n tao euc hạy cái kia thử m xem nha
+	// check login nè.
+	//giờ giả sử tao bấm vào nút login facebook. nó sẽ trả vể kết quả ở return_url . làm sao để set là với cái email của facebook đó được phép đăng nhập ?
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	public String login(@RequestParam("login[username]") String email,
 			@RequestParam("login[password]") String password, Model model,
@@ -146,6 +328,7 @@ public class CustomerController {
 				if (url != null && !"".equals(url)) {
 					return "redirect:" + url;
 				}
+				//doan nao set cookie dau?
 				return "redirect:/customer/account/";
 			}
 		}
@@ -176,7 +359,7 @@ public class CustomerController {
 		if (result.hasErrors()) {
 			return "register";
 		} else {
-			CustomerEntity customer = customerService.register(account);
+			CustomerEntity customer = customerService.register(account,false);
 			if (customer == null) {
 				model.addAttribute("error_register", messageSource.getMessage(
 						"customer.account.register.error.E1", null, null));
@@ -488,6 +671,8 @@ public class CustomerController {
 		SimpleMailMessage email = new SimpleMailMessage();
 		email.setTo(recipientAddress);
 		email.setSubject(template.getTemplateSubject());
+		
+         
 		String text = String.format(template.getTemplateText(),
 				customer.getLastname() + " " + customer.getFirstname(),
 				resetPassword);

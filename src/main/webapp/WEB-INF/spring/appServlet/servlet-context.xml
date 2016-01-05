@@ -27,14 +27,13 @@
     <context:component-scan base-package="com.example.repository" />
     <context:component-scan base-package="com.example.service" />
     <context:component-scan base-package="com.example.validator" />
-    <context:component-scan base-package="com.example.controllerAPI" />
 
     <!-- DataSource database -->
     <beans:bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <beans:property name="driverClassName" value="com.mysql.jdbc.Driver" />
-        <beans:property name="url" value="jdbc:mysql://localhost:3306/lovefashion" />
+        <beans:property name="url" value="jdbc:mysql://localhost:3307/lovefashion?useUnicode=true&amp;characterEncoding=UTF-8" />
         <beans:property name="username" value="root" />
-        <beans:property name="password" value="root" />
+        <beans:property name="password" value="usbw" />
     </beans:bean>
     
     <!-- Session factory -->
@@ -142,6 +141,7 @@
                 <beans:prop key="mail.transport.protocol">smtp</beans:prop>
                 <beans:prop key="mail.smtp.auth">true</beans:prop>
                 <beans:prop key="mail.smtp.starttls.enable">true</beans:prop>
+                <beans:prop key="mail.mime.charset">utf8</beans:prop>
             </beans:props>
         </beans:property>
     </beans:bean>
@@ -159,12 +159,12 @@
         </interceptor>
     </interceptors>
     
-    <beans:bean
+   <!--  <beans:bean
         class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
         <beans:property name="exceptionMappings">
             <beans:props>
                 <beans:prop key="java.lang.Exception">exception</beans:prop>
             </beans:props>
         </beans:property>
-    </beans:bean>
+    </beans:bean> -->
 </beans:beans>

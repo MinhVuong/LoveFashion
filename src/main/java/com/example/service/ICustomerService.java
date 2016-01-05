@@ -15,12 +15,12 @@ public interface ICustomerService {
 
 	public CustomerEntity getCustomer(String email, String password)
 			throws NoSuchAlgorithmException;
-
+	
 	public CustomerEntity getCustomerId(Integer id);
 	
 	public void update(CustomerEntity customer);
 
-	public CustomerEntity register(RegisterModel register)
+	public CustomerEntity register(RegisterModel register, boolean social)
 			throws NoSuchAlgorithmException;
 
 	public CustomerEntity findByEmail(String email);

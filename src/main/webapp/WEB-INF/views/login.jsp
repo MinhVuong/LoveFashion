@@ -232,6 +232,7 @@ a {
                               <button type="submit" class="button" title="Login" name="send" id="send2">
                                 <span><span>Login</span></span>
                               </button>
+                              <a href="https://accounts.google.com/o/oauth2/auth?scope=email&redirect_uri=http://localhost:8080/customer/account/loginFB&response_type=code&client_id=1052950712954-a2nrjpahmp79lb92ahmah2vm9764fmtl.apps.googleusercontent.com&approval_prompt=force" class="f-left">Login Using Google</a>
                               <a href="/customer/account/forgotpassword/" class="f-left">Forgot
                                 Your Password?</a>
                             </div>

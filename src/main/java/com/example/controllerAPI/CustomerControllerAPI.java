@@ -41,6 +41,7 @@ import com.example.entity.SalesOrder;
 import com.example.entity.VerificationToken;
 import com.example.event.OnRegistrationCompleteEvent;
 import com.example.modelAPI.CustomerAPI;
+import com.example.modelAPI.ListOrderAPI;
 import com.example.modelAPI.Message;
 import com.example.modelAPI.PackageAPI;
 import com.example.modelAPI.ShowAddress;
@@ -184,85 +185,20 @@ public class CustomerControllerAPI {
 	
 	@RequestMapping(value = "/register", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> register(
-			@RequestBody RegisterModel account,HttpServletRequest request,
-			BindingResult result
-			) throws NoSuchAlgorithmException{
-		String email = account.getEmail();
-		String first_name = account.getFirstName();
-		String last_name = account.getLastName();
-		String password = account.getPassword();
-		String comfirm_password = account.getConfirmPassword();
-		
+	public ResponseEntity<PackageAPI> register(@RequestBody RegisterModel account){
 		Message message = new Message();
-		if(email==null || email.equals(""))
-		{
+		CustomerEntity customer;
+		
+		try {
+			customer = customerService.register(account, false);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
 			
 			message.setTitle("Register");
-			message.setContent("Email null"); 
-			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
+			message.setContent("Error Server"); 
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(404));
 		}
-		else
-		{
-			if(!pattern.matcher(email).matches())
-			{
-				
-				message.setTitle("Register");
-				message.setContent("Email didn't corrected format ex: @gmail or @yahoo,..."); 
-				return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-			}
-			else
-			{
-				if(password==null || password.equals(""))
-				{
-					
-					message.setTitle("Register");
-					message.setContent("Password null"); 
-					return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-				}
-				else
-				{
-					if(password.length() < 6)
-					{
-						
-						message.setTitle("Register");
-						message.setContent("Length password less 6 chars"); 
-						return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-					}
-					else{
-						if(!password.equals(comfirm_password))
-						{
-							
-							message.setTitle("Register");
-							message.setContent("Password didn't matched."); 
-							return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-						}else{
-							if(first_name==null || first_name.equals(""))
-							{
-								
-								message.setTitle("Register");
-								message.setContent("First Name null"); 
-								return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-							}else{
-								if(last_name==null || last_name.equals(""))
-								{
-									
-									message.setTitle("Register");
-									message.setContent("Last Name null"); 
-									return new ResponseEntity<PackageAPI>(message, HttpStatus.valueOf(422));
-								}
-							}
-							
-						}
-						
-					}
-					
-				}
-			}
-		}
-		CustomerEntity customer = customerService.register(account, false);
 		if (customer == null) {
-			
 			message.setTitle("Register");
 			message.setContent("Email had used!"); 
 			return new ResponseEntity<PackageAPI>(message, HttpStatus.CONFLICT);
@@ -271,8 +207,8 @@ public class CustomerControllerAPI {
 			message.setTitle("Register");
 			message.setContent("Register success");
 			
-			String appUrl = this.getBaseUrl(request);
-			eventPublisher.publishEvent(new OnRegistrationCompleteEvent(this, customer, request.getLocale(), appUrl));
+			//String appUrl = this.getBaseUrl(request);
+			//eventPublisher.publishEvent(new OnRegistrationCompleteEvent(this, customer, request.getLocale(), appUrl));
 			
 			return new ResponseEntity<PackageAPI>(message, HttpStatus.OK);
 		}
@@ -353,7 +289,7 @@ public class CustomerControllerAPI {
 	
 	@RequestMapping(value = "/edit/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> showUpdateAccount(@RequestParam(value = "id") Integer id,
+	public ResponseEntity<PackageAPI> showUpdateAccount(@PathVariable(value = "id") Integer id,
 			@RequestParam(value = "changePassword", required = false) Integer changePassword) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
@@ -365,12 +301,12 @@ public class CustomerControllerAPI {
 		return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 	}
 	
-	@RequestMapping(value = "/edit/{id}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
+	@RequestMapping(value = "/edit", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> updateAccount(@RequestParam(value = "id") Integer id,
-			@RequestBody UpdateAccount account)
+	public ResponseEntity<PackageAPI> updateAccount(@RequestBody UpdateAccount account)
 			throws NoSuchAlgorithmException {
-		CustomerEntity customer = customerService.getCustomerId(id);
+		
+		CustomerEntity customer = customerService.findByEmail(account.getEmail());
 		
 		if (customer != null) {
 			customer.setFirstname(account.getFirstName());
@@ -383,12 +319,16 @@ public class CustomerControllerAPI {
 							.hashPassword(account.getPassword()));
 				} else {
 					
-					return new ResponseEntity<PackageAPI>(HttpStatus.NO_CONTENT);
+					return new ResponseEntity<PackageAPI>(HttpStatus.valueOf(404));
 				}
 			}
 			customerService.update(customer);
+			String id = customer.getEntityId().toString();
+			Message message = new Message();
+			message.setTitle("Update Account");
+			message.setContent(id);
 			
-			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
+			return new ResponseEntity<PackageAPI>(message, HttpStatus.OK);
 		} else {
 			return new ResponseEntity<PackageAPI>(HttpStatus.BAD_REQUEST);
 		}
@@ -397,7 +337,7 @@ public class CustomerControllerAPI {
 	
 	@RequestMapping(value = "/address/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<ShowAddress> showAddress(@RequestParam(value = "id") Integer id) {
+	public ResponseEntity<ShowAddress> showAddress(@PathVariable("id") int id) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			CustomerAddressEntity defaultBilling = null;
@@ -420,7 +360,7 @@ public class CustomerControllerAPI {
 			showAddress.setDefaultBilling(defaultBilling);
 			showAddress.setDefaultShipping(defaultShipping);
 			showAddress.setListAddress(listAddress);
-			return new ResponseEntity<ShowAddress>(HttpStatus.OK);
+			return new ResponseEntity<ShowAddress>(showAddress, HttpStatus.OK);
 		} else {
 			
 			return new ResponseEntity<ShowAddress>(HttpStatus.BAD_REQUEST);
@@ -450,7 +390,7 @@ public class CustomerControllerAPI {
 	
 	@RequestMapping(value = "/address/new/{id}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> addNewAddress(@RequestParam(value = "id") Integer id,
+	public ResponseEntity<PackageAPI> addNewAddress(@PathVariable(value = "id") Integer id,
 			@RequestBody AddressAccount address) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
@@ -518,7 +458,7 @@ public class CustomerControllerAPI {
 	////////////////////////////////////////////
 	@RequestMapping(value = "/address/edit/{id}", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> updateAddress(@RequestParam(value = "id") Integer id,
+	public ResponseEntity<PackageAPI> updateAddress(@PathVariable(value = "id") Integer id,
 			@RequestBody AddressAccount address) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
@@ -534,7 +474,7 @@ public class CustomerControllerAPI {
 
 	@RequestMapping(value = "/address/delete/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> deleteAddress(@RequestParam(value = "id") Integer id) {
+	public ResponseEntity<PackageAPI> deleteAddress(@PathVariable(value = "id") Integer id) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
 			if (id == null) {
@@ -549,35 +489,29 @@ public class CustomerControllerAPI {
 
 	}
 
-	@RequestMapping(value = "/forgotpassword", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
-	@ResponseBody
-	public String showForgotPassword() {
-		return "forgot-password";
-	}
+	
 
 	@RequestMapping(value = "/forgotpassword", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> forgotPassword(@RequestParam("email") String customerEmail,
-			HttpServletRequest request) {
+	public ResponseEntity<PackageAPI> forgotPassword(@RequestBody CustomerEntity customer_Client, HttpServletRequest request) {
+		String customerEmail = customer_Client.getEmail();
+		System.out.println(customerEmail);
+		System.out.println("api forgot password");
 		if (customerEmail == null || "".equals(customerEmail)) {
-			
 			return new ResponseEntity<PackageAPI>(HttpStatus.NO_CONTENT);
 		} else if (!pattern.matcher(customerEmail).matches()) {
 			
 			return new ResponseEntity<PackageAPI>(HttpStatus.valueOf(422));		// khong dung dinh dang
 		} else {
-			CustomerEntity customer = customerService
-					.findByEmail(customerEmail);
+			
+			CustomerEntity customer = customerService.findByEmail(customerEmail);
 			if (customer == null) {
-				
 				return new ResponseEntity<PackageAPI>(HttpStatus.CONFLICT);
 			}
 			String token = UUID.randomUUID().toString();
-			customerService.createVerificationTokenForUser(customer, token,
-					"reset-pass");
+			customerService.createVerificationTokenForUser(customer, token,"reset-pass");
 			String appUrl = getBaseUrl(request);
-			SimpleMailMessage email = constructResetTokenEmail(appUrl,
-					request.getLocale(), token, customer);
+			SimpleMailMessage email = constructResetTokenEmail(appUrl,request.getLocale(), token, customer);
 			mailSender.send(email);
 			
 			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
@@ -593,10 +527,12 @@ public class CustomerControllerAPI {
 				+ customer.getEntityId() + "&token=" + token;
 		SimpleMailMessage email = new SimpleMailMessage();
 		email.setTo(recipientAddress);
+		
 		email.setSubject(template.getTemplateSubject());
 		String text = String.format(template.getTemplateText(),
 				customer.getLastname() + " " + customer.getFirstname(),
 				resetPassword);
+		
 		email.setText(text);
 		return email;
 	}
@@ -604,7 +540,7 @@ public class CustomerControllerAPI {
 	@RequestMapping(value = "/changePassword", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
 	public ResponseEntity<PackageAPI> showChangePasswordPage(Locale locale, Model model,
-			@RequestParam("id") Integer id, @RequestParam("token") String token) {
+			@RequestParam("id") Integer id, @PathVariable("token") String token) {
 		VerificationToken verificationToken = customerService
 				.getVerificationToken(token);
 		CustomerEntity customer = verificationToken.getCustomerEntity();
@@ -627,7 +563,7 @@ public class CustomerControllerAPI {
 
 	@RequestMapping(value = "/changePassword", method = RequestMethod.POST, consumes = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> changePasswordPage(@RequestParam("password") String password,
+	public ResponseEntity<PackageAPI> changePasswordPage(@PathVariable("password") String password,
 			@RequestParam("confirmPassword") String confirmPassword,
 			@RequestParam("entityId") int entityId)
 			throws NoSuchAlgorithmException {
@@ -640,31 +576,34 @@ public class CustomerControllerAPI {
 
 	@RequestMapping(value = "/myorder/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<List<OrderModel>> order(@RequestParam(value = "id") Integer id) {
+	public ResponseEntity<ListOrderAPI> order(@PathVariable(value = "id") Integer id) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
-			List<OrderModel> orders = customerService.myOrders(customer);
+			ListOrderAPI list = new ListOrderAPI();
+			list.setListOder(customerService.myOrders(customer));
 			
-			return new ResponseEntity<List<OrderModel>>(orders, HttpStatus.OK);
+			return new ResponseEntity<ListOrderAPI>(list, HttpStatus.OK);
 		} else {
-			return new ResponseEntity<List<OrderModel>>(HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<ListOrderAPI>(HttpStatus.BAD_REQUEST);
 		}
 	}
 
-	@RequestMapping(value = "/myorder/cancle/{id}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
+	@RequestMapping(value = "/myorder/cancle/{id},{di}", method = RequestMethod.GET, produces = { "application/json", "application/xml" })
 	@ResponseBody
-	public ResponseEntity<PackageAPI> cancleOrder(@RequestParam(value = "id") Integer id) {
+	public ResponseEntity<PackageAPI> cancleOrder(@PathVariable(value = "id") Integer id, @PathVariable(value = "di") Integer di) {
+		System.out.println(id);
+		System.out.println(di);
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer != null) {
-			SalesOrder order = customerService.getOrder(id);
+			SalesOrder order = customerService.getOrder(di);
 			if (order != null) {
 				Calendar cal = Calendar.getInstance();
 				long time =  cal.getTime().getTime() - order.getCreatedAt().getTime();
 				if ((cal.getTime().getTime() - order.getCreatedAt().getTime()) <= 10800*1000){
 					//model.addAttribute("message", "Orders has been canceled.");
 					customerService.cancelOrder(order);
-					SimpleMailMessage email = constructCancleOrdersEmail(customer, id);
-					mailSender.send(email);
+					//SimpleMailMessage email = constructCancleOrdersEmail(customer, id);
+					//mailSender.send(email);
 					return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 				} else {
 					//model.addAttribute("message", "Your order has placed more than 3 hours should not be canceled.");

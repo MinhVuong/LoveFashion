@@ -1,6 +1,7 @@
 package com.example.controllerAPI;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import com.example.entity.SalesOrder;
 import com.example.entity.VerificationToken;
 import com.example.event.OnRegistrationCompleteEvent;
 import com.example.modelAPI.CustomerAPI;
+import com.example.modelAPI.CustomerAddressAPI;
 import com.example.modelAPI.ListOrderAPI;
 import com.example.modelAPI.Message;
 import com.example.modelAPI.PackageAPI;
@@ -83,35 +85,57 @@ public class CustomerControllerAPI {
 	private Pattern pattern = Pattern.compile(EMAIL_PATTERN);
 
 	@RequestMapping(value = { "/{id}" },method = RequestMethod.GET, produces = { "application/json", "application/xml" })
-	public ResponseEntity<PackageAPI> showDashboard(@PathVariable("id") int id) {
+	public ResponseEntity<ShowDashBoard> showDashboard(@PathVariable("id") int id) {
 		CustomerEntity customer = customerService.getCustomerId(id);
 		if (customer == null) {
-			return new ResponseEntity<PackageAPI>( HttpStatus.NO_CONTENT);
+			return new ResponseEntity<ShowDashBoard>(HttpStatus.valueOf(404));
 		} else {
-			
-			ShowDashBoard showDashBoard = new ShowDashBoard();
-			CustomerAPI result = new CustomerAPI();
-			result.setEmail(customer.getEmail());
-			result.setEntityId(customer.getEntityId());
-			result.setFirstname(customer.getFirstname());
-			result.setGender(customer.getGender());
-			result.setLastname(customer.getLastname());
-			result.setPassword(customer.getPassword());
-			result.setScore(customer.getScore());
-			
-			showDashBoard.setDefaultBilling(null);
-			showDashBoard.setDefaultShipping(null);
+			ShowDashBoard show = new ShowDashBoard();
+			CustomerAddressEntity defaultBilling = null;
+			CustomerAddressEntity defaultShipping = null;
 			if (customer.getDefaultBilling() != null) {
-				showDashBoard.setDefaultBilling(customerService.getCustomerAddress(new Integer(customer.getDefaultBilling()))); 
+				defaultBilling = customerService
+						.getCustomerAddress(new Integer(customer
+								.getDefaultBilling()));
 			}
 			if (customer.getDefaultShipping() != null) {
-				showDashBoard.setDefaultShipping(customerService.getCustomerAddress(new Integer(customer.getDefaultShipping())));
+				defaultShipping = customerService
+						.getCustomerAddress(new Integer(customer
+								.getDefaultShipping()));
 			}
-			System.out.println("api show dashboard ");
+			System.out.println(defaultBilling.getLastname());
+			show.setDefaultBilling(ChangeAddressEntityToAPI(defaultBilling));
+			show.setDefaultShipping(ChangeAddressEntityToAPI(defaultShipping));
+			show.setCustomer(ChangeCustomerEntityToAPI(customer));
 			
-			showDashBoard.setCustomer(result);
-			return new ResponseEntity<PackageAPI>(showDashBoard, HttpStatus.OK);
+			return new ResponseEntity<ShowDashBoard>(show, HttpStatus.valueOf(200));
 		}
+	}
+	
+	protected CustomerAddressAPI ChangeAddressEntityToAPI(CustomerAddressEntity entity)
+	{
+		CustomerAddressAPI result = new CustomerAddressAPI();
+		result.setEntityId(entity.getEntityId());
+		result.setStreet(entity.getStreet());
+		result.setRegion(entity.getRegion());
+		result.setCountry(entity.getCountry());
+		result.setFirstname(entity.getFirstname());
+		result.setLastname(entity.getLastname());
+		result.setPhone(entity.getPhone());
+		return result;
+	}
+	protected CustomerAPI ChangeCustomerEntityToAPI(CustomerEntity entity)
+	{
+		CustomerAPI result = new CustomerAPI();
+		result.setEmail(entity.getEmail());
+		result.setEntityId(entity.getEntityId());
+		result.setFirstname(entity.getFirstname());
+		result.setGender(entity.getGender());
+		result.setGroup(1);
+		result.setLastname(entity.getLastname());
+		result.setPassword(entity.getPassword());
+		result.setScore(entity.getScore());
+		return result;
 	}
 	
 	@RequestMapping(value = { "/login " },
@@ -357,14 +381,24 @@ public class CustomerControllerAPI {
 							customer.getDefaultBilling(),
 							customer.getDefaultShipping());
 			ShowAddress showAddress = new ShowAddress();
-			showAddress.setDefaultBilling(defaultBilling);
-			showAddress.setDefaultShipping(defaultShipping);
-			showAddress.setListAddress(listAddress);
+			showAddress.setDefaultBilling(ChangeAddressEntityToAPI(defaultBilling));
+			showAddress.setDefaultShipping(ChangeAddressEntityToAPI(defaultShipping));
+			showAddress.setListAddress(ChangeListAddressEntityToAPI(listAddress));
 			return new ResponseEntity<ShowAddress>(showAddress, HttpStatus.OK);
 		} else {
 			
 			return new ResponseEntity<ShowAddress>(HttpStatus.BAD_REQUEST);
 		}
+	}
+	
+	protected List<CustomerAddressAPI> ChangeListAddressEntityToAPI(List<CustomerAddressEntity> entity)
+	{
+		List<CustomerAddressAPI> result = new ArrayList<CustomerAddressAPI>();
+		for(int i=0; i<entity.size(); i++)
+		{
+			result.add(ChangeAddressEntityToAPI(entity.get(i)));
+		}
+		return result;
 	}
 	
 	@RequestMapping(value = "/address/new", method = RequestMethod.GET)	// Xem lai sau
@@ -403,8 +437,6 @@ public class CustomerControllerAPI {
 			address.setRegion(regionList.get(address.getRegionId()));
 			address.setCountry(countryList.get(address.getCountryId()));
 			customerService.saveAdress(address, customer);
-			
-			
 			return new ResponseEntity<PackageAPI>(HttpStatus.OK);
 		} else {
 		

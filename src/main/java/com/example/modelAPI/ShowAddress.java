@@ -5,47 +5,46 @@ import java.util.List;
 import com.example.entity.CustomerAddressEntity;
 
 public class ShowAddress {
-	private CustomerAddressEntity defaultBilling;
-	private CustomerAddressEntity defaultShipping;
-	private List<CustomerAddressEntity> listAddress;
+	private CustomerAddressAPI defaultBilling;
+	private CustomerAddressAPI defaultShipping;
+	private List<CustomerAddressAPI> listAddress;
 	
 	public ShowAddress() {
 		super();
 	}
-	
-	public ShowAddress(CustomerAddressEntity defaultBilling,
-			CustomerAddressEntity defaultShipping,
-			List<CustomerAddressEntity> listAddress) {
+
+	public ShowAddress(CustomerAddressAPI defaultBilling,
+			CustomerAddressAPI defaultShipping,
+			List<CustomerAddressAPI> listAddress) {
 		super();
 		this.defaultBilling = defaultBilling;
 		this.defaultShipping = defaultShipping;
 		this.listAddress = listAddress;
 	}
 
-	public CustomerAddressEntity getDefaultBilling() {
+	public CustomerAddressAPI getDefaultBilling() {
 		return defaultBilling;
 	}
 
-	public void setDefaultBilling(CustomerAddressEntity defaultBilling) {
+	public void setDefaultBilling(CustomerAddressAPI defaultBilling) {
 		this.defaultBilling = defaultBilling;
 	}
 
-	public CustomerAddressEntity getDefaultShipping() {
+	public CustomerAddressAPI getDefaultShipping() {
 		return defaultShipping;
 	}
 
-	public void setDefaultShipping(CustomerAddressEntity defaultShipping) {
+	public void setDefaultShipping(CustomerAddressAPI defaultShipping) {
 		this.defaultShipping = defaultShipping;
 	}
 
-	public List<CustomerAddressEntity> getListAddress() {
+	public List<CustomerAddressAPI> getListAddress() {
 		return listAddress;
 	}
 
-	public void setListAddress(List<CustomerAddressEntity> listAddress) {
+	public void setListAddress(List<CustomerAddressAPI> listAddress) {
 		this.listAddress = listAddress;
 	}
-	
 	
 	
 	

@@ -109,6 +109,7 @@ public class CustomerController {
 						.getCustomerAddress(new Integer(customer
 								.getDefaultShipping()));
 			}
+			System.out.println(defaultBilling.getLastname());
 			model.addAttribute("defaultBilling", defaultBilling);
 			model.addAttribute("defaultShipping", defaultShipping);
 			return "dashboard";

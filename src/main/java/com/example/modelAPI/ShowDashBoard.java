@@ -1,49 +1,40 @@
 package com.example.modelAPI;
 
-import com.example.entity.CustomerAddressEntity;
-import com.example.entity.CustomerEntity;
+
 
 public class ShowDashBoard extends PackageAPI {
 	
-	private CustomerAddressEntity defaultBilling;
-	private CustomerAddressEntity defaultShipping;
+	private CustomerAddressAPI defaultBilling;
+	private CustomerAddressAPI defaultShipping;
 	private CustomerAPI customer;	
 	public ShowDashBoard() {
 		super();	
 	}
-
-	public ShowDashBoard(CustomerAddressEntity defaultBilling,
-			CustomerAddressEntity defaultShipping, CustomerAPI customer) {
+	public ShowDashBoard(CustomerAddressAPI defaultBilling,
+			CustomerAddressAPI defaultShipping, CustomerAPI customer) {
 		super();
 		this.defaultBilling = defaultBilling;
 		this.defaultShipping = defaultShipping;
 		this.customer = customer;
 	}
-
-
-
-	public CustomerAddressEntity getDefaultBilling() {
+	public CustomerAddressAPI getDefaultBilling() {
 		return defaultBilling;
 	}
-
-	public void setDefaultBilling(CustomerAddressEntity defaultBilling) {
+	public void setDefaultBilling(CustomerAddressAPI defaultBilling) {
 		this.defaultBilling = defaultBilling;
 	}
-
-	public CustomerAddressEntity getDefaultShipping() {
+	public CustomerAddressAPI getDefaultShipping() {
 		return defaultShipping;
 	}
-
-	public void setDefaultShipping(CustomerAddressEntity defaultShipping) {
+	public void setDefaultShipping(CustomerAddressAPI defaultShipping) {
 		this.defaultShipping = defaultShipping;
 	}
-	
 	public CustomerAPI getCustomer() {
 		return customer;
 	}
-
 	public void setCustomer(CustomerAPI customer) {
 		this.customer = customer;
 	}
 
+	
 }

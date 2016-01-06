@@ -9,6 +9,7 @@ public class CustomerAPI {
 	private String email;
 	private String password;
 	private Integer score;
+	private int group;
 	
 	public CustomerAPI() {
 		super();
@@ -16,7 +17,7 @@ public class CustomerAPI {
 	}
 	
 	public CustomerAPI(Integer entityId, String firstname, String lastname,
-			Short gender, String email, String password, Integer score) {
+			Short gender, String email, String password, Integer score, int group) {
 		super();
 		this.entityId = entityId;
 		this.firstname = firstname;
@@ -25,6 +26,7 @@ public class CustomerAPI {
 		this.email = email;
 		this.password = password;
 		this.score = score;
+		this.group = group;
 	}
 
 	public Integer getEntityId() {
@@ -81,6 +83,14 @@ public class CustomerAPI {
 
 	public void setScore(Integer score) {
 		this.score = score;
+	}
+
+	public int getGroup() {
+		return group;
+	}
+
+	public void setGroup(int group) {
+		this.group = group;
 	}
 	
 	
